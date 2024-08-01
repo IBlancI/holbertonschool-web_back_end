@@ -30,6 +30,10 @@ export class StudentHolberton {
     get holbertonClass() {
         return this._holbertonClass;
     }
+
+    fullStudentDescription() {
+        return `${this.fullName} - ${this.holbertonClass.year} - ${this.holbertonClass.location}`;
+    }
 }
 
 const student1 = new StudentHolberton('Guillaume', 'Salva', class2020);
@@ -43,7 +47,5 @@ const listOfStudents = [student1, student2, student3, student4, student5];
 export default listOfStudents;
 
 export function fullStudentDescription(students) {
-    return students.map(student => {
-        return `${student.fullName} - ${student.holbertonClass.year} - ${student.holbertonClass.location}`;
-    });
+    return students.map(student => student.fullStudentDescription());
 }
