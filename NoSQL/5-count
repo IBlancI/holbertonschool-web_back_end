@@ -1,0 +1,2 @@
+// db
+print(db.school.countDocuments())
