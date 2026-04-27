@@ -9,6 +9,18 @@ from typing import Union, Callable, Any
 from functools import wraps
 
 
+def count_calls(method: Callable) -> Callable:
+    """
+    Decorator to count how many times a method of the Cache class is called.
+    Uses the method's qualified name as the Redis key.
+    """
+    @wraps(method)
+    def wrapper(self, *args, **kwargs) -> Any:
+        self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
 def call_history(method: Callable) -> Callable:
     """
     Decorator to store the history of inputs and outputs
@@ -62,6 +74,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
@@ -70,3 +83,28 @@ class Cache:
         key = str(uuid.uuid4())
         self._redis.set(key, data)
         return key
+
+    def get(
+        self,
+        key: str,
+        fn: Callable = None
+    ) -> Union[str, bytes, int, float, None]:
+        """
+        Retrieve data from Redis and optionally apply a conversion function.
+        Preserves the original Redis.get behavior (returns None) if key does
+        not exist.
+        """
+        data = self._redis.get(key)
+        if data is None:
+            return None
+        if fn is not None:
+            return fn(data)
+        return data
+
+    def get_str(self, key: str) -> str:
+        """Retrieve a string value from Redis."""
+        return self.get(key, fn=lambda d: d.decode("utf-8"))
+
+    def get_int(self, key: str) -> int:
+        """Retrieve an integer value from Redis."""
+        return self.get(key, fn=int)
